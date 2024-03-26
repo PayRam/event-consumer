@@ -117,7 +117,7 @@ func (s *service) Run() error {
 
 func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
 	// Assuming config.ToAddress is a []string for simplicity in this example
-	toAddresses := strings.Join(attrs["ToAddresses"].([]string), ", ")
+	toAddresses := strings.Join(getToAddresses(attrs), ", ")
 
 	// Prepare email headers and body
 	var emailContent bytes.Buffer
@@ -131,7 +131,7 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 		s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
 		s.smtpAuth,
 		config.FromAddress,
-		attrs["ToAddresses"].([]string),
+		getToAddresses(attrs),
 		emailContent.Bytes(),
 	)
 	if err != nil {
@@ -143,7 +143,7 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 
 func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
 	message := &postal.SendRequest{
-		To:       attrs["ToAddresses"].([]string),
+		To:       getToAddresses(attrs),
 		From:     config.FromAddress,
 		Subject:  subject,
 		HTMLBody: emailBody.String(),
@@ -155,6 +155,24 @@ func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject strin
 		return err
 	} else {
 		attrs["postalMessageID"] = resp.MessageID
+	}
+	return nil
+}
+
+func getToAddresses(attrs map[string]interface{}) []string {
+	if toAddresses, ok := attrs["ToAddresses"].([]interface{}); ok {
+		var strToAddresses []string
+		for _, addr := range toAddresses {
+			if strAddr, ok := addr.(string); ok {
+				strToAddresses = append(strToAddresses, strAddr)
+			} else {
+				// Handle the case where the conversion is not possible
+				logger.Warn("Warning: Non-string value encountered in ToAddresses")
+			}
+		}
+		return strToAddresses
+	} else {
+		logger.Error("Error: ToAddresses is not a slice of interface{}")
 	}
 	return nil
 }

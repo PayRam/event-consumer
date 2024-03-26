@@ -7,10 +7,18 @@ import (
 	"html/template"
 )
 
-func NewConsumerServiceWithDB(configs []param.RoutineConfig, db *gorm.DB, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
-	return serviceimpl.NewConsumerServiceWithDB(configs, db, templates, smtpConfig)
+func NewSMTPConsumerServiceWithDB(configs []param.RoutineConfig, db *gorm.DB, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
+	return serviceimpl.NewSMTPConsumerServiceWithDB(configs, db, templates, smtpConfig)
 }
 
-func NewConsumerService(configs []param.RoutineConfig, dbPath string, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
-	return serviceimpl.NewConsumerService(configs, dbPath, templates, smtpConfig)
+func NewSMTPConsumerService(configs []param.RoutineConfig, dbPath string, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
+	return serviceimpl.NewSMTPConsumerService(configs, dbPath, templates, smtpConfig)
+}
+
+func NewPostalConsumerServiceWithDB(configs []param.RoutineConfig, db *gorm.DB, templates *template.Template, postalConfig *param.PostalConfig) param.ConsumerService {
+	return serviceimpl.NewPostalConsumerServiceWithDB(configs, db, templates, postalConfig)
+}
+
+func NewPostalConsumerService(configs []param.RoutineConfig, dbPath string, templates *template.Template, postalConfig *param.PostalConfig) param.ConsumerService {
+	return serviceimpl.NewPostalConsumerService(configs, dbPath, templates, postalConfig)
 }

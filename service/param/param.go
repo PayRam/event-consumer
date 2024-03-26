@@ -13,6 +13,11 @@ type SMTPConfig struct {
 	Password string
 }
 
+type PostalConfig struct {
+	Endpoint string
+	APIKey   string
+}
+
 type PostEvent struct {
 	EventName         string
 	CopyProfileID     bool
@@ -22,12 +27,15 @@ type PostEvent struct {
 
 type RoutineConfig struct {
 	QueryBuilder         *param.QueryBuilder
+	Subject              string
 	FromAddress          string
 	ToAddress            []string
 	EmailTemplateName    string
 	EmmitEventsOnSuccess []PostEvent
 	EmmitEventsOnError   []PostEvent
 }
+
+var attributeSpecJSON = `{"refId": true, "test1": true, "postalMessageID": true}`
 
 var RoutineConfigs = []RoutineConfig{
 	{
@@ -40,22 +48,24 @@ var RoutineConfigs = []RoutineConfig{
 				},
 			},
 			QueryBuilderParam: &param.QueryBuilder{
-				EventName: []string{"deposit-received-email-sent"},
+				EventName: []string{"deposit-received-email-sent", "deposit-received-email-failed"},
 			},
 		},
-		FromAddress:       "noreply@example.com",
-		ToAddress:         []string{"user@example.com"},
+		FromAddress:       "sam@yourdomain.com",
+		ToAddress:         []string{"sam@payram.app"},
 		EmailTemplateName: "master.tmpl",
 		EmmitEventsOnSuccess: []PostEvent{
 			{
-				EventName:     "event1",
+				EventName:     "deposit-received-email-sent",
 				CopyProfileID: true,
+				AttributeSpec: &attributeSpecJSON,
 			},
 		},
 		EmmitEventsOnError: []PostEvent{
 			{
-				EventName:     "event1",
-				CopyProfileID: true,
+				EventName:         "deposit-received-email-failed",
+				CopyProfileID:     true,
+				CopyFullAttribute: true,
 			},
 		},
 	},

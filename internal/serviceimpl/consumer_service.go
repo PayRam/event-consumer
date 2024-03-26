@@ -2,14 +2,16 @@ package serviceimpl
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Pacerino/postal-go"
+	"github.com/PayRam/event-consumer/internal/logger"
 	"github.com/PayRam/event-consumer/service/param"
 	service2 "github.com/PayRam/event-emitter/service"
 	param2 "github.com/PayRam/event-emitter/service/param"
 	"gorm.io/gorm"
 	"html/template"
-	"log"
 	"net/smtp"
 	"strconv"
 	"strings"
@@ -21,25 +23,49 @@ type service struct {
 	templates    *template.Template
 	smtpConfig   *param.SMTPConfig
 	smtpAuth     smtp.Auth
+	client       *postal.Client
+	consumerType string //SMTP or POSTAL
 }
 
-func NewConsumerServiceWithDB(configs []param.RoutineConfig, db *gorm.DB, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
+func NewSMTPConsumerServiceWithDB(configs []param.RoutineConfig, db *gorm.DB, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
 	return &service{
 		configs:      configs,
 		eventService: service2.NewEventServiceWithDB(db),
 		templates:    templates,
 		smtpConfig:   smtpConfig,
 		smtpAuth:     smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host),
+		consumerType: "SMTP",
 	}
 }
 
-func NewConsumerService(configs []param.RoutineConfig, dbPath string, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
+func NewSMTPConsumerService(configs []param.RoutineConfig, dbPath string, templates *template.Template, smtpConfig *param.SMTPConfig) param.ConsumerService {
 	return &service{
 		configs:      configs,
 		eventService: service2.NewEventService(dbPath),
 		templates:    templates,
 		smtpConfig:   smtpConfig,
 		smtpAuth:     smtp.PlainAuth("", smtpConfig.Username, smtpConfig.Password, smtpConfig.Host),
+		consumerType: "SMTP",
+	}
+}
+
+func NewPostalConsumerServiceWithDB(configs []param.RoutineConfig, db *gorm.DB, templates *template.Template, postalConfig *param.PostalConfig) param.ConsumerService {
+	return &service{
+		configs:      configs,
+		eventService: service2.NewEventServiceWithDB(db),
+		templates:    templates,
+		client:       postal.NewClient(postalConfig.Endpoint, postalConfig.APIKey),
+		consumerType: "POSTAL",
+	}
+}
+
+func NewPostalConsumerService(configs []param.RoutineConfig, dbPath string, templates *template.Template, postalConfig *param.PostalConfig) param.ConsumerService {
+	return &service{
+		configs:      configs,
+		eventService: service2.NewEventService(dbPath),
+		templates:    templates,
+		client:       postal.NewClient(postalConfig.Endpoint, postalConfig.APIKey),
+		consumerType: "POSTAL",
 	}
 }
 
@@ -54,41 +80,64 @@ func (s *service) Run() error {
 			// Unmarshal the JSON string into a map
 			var attrs map[string]interface{}
 			if err := json.Unmarshal([]byte(event.Attribute), &attrs); err != nil {
-				log.Fatalf("Error unmarshaling JSON: %v", err)
+				logger.Error("Error unmarshalling event attribute: %v", err)
 			}
 			// Generate the email body
 			emailBody := new(bytes.Buffer)
 			if err := s.templates.ExecuteTemplate(emailBody, config.EmailTemplateName, attrs); err != nil {
-				log.Fatal(err)
+				logger.Error("Error unmarshalling event attribute: %v", err)
 			}
 
-			// Assuming config.ToAddress is a []string for simplicity in this example
-			toAddresses := strings.Join(config.ToAddress, ", ")
+			var subject = config.Subject
+			if attrs["emailSubject"] != nil {
+				subject = attrs["emailSubject"].(string)
+			}
 
-			// Prepare email headers and body
-			var emailContent bytes.Buffer
-			emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.FromAddress))
-			emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
-			emailContent.WriteString("Subject: Your Subject Here\r\n") // Add a subject
-			emailContent.WriteString("\r\n")                           // End of headers, start of body
-			emailContent.WriteString(emailBody.String())
+			var err error
 
-			// Sending email
-			err := smtp.SendMail(
-				s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
-				s.smtpAuth,
-				config.FromAddress,
-				config.ToAddress,
-				emailContent.Bytes(),
-			)
+			if s.consumerType == "POSTAL" {
+				message := &postal.SendRequest{
+					To:       config.ToAddress,
+					From:     config.FromAddress,
+					Subject:  subject,
+					HTMLBody: emailBody.String(),
+				}
+				var resp *postal.SendResponse
+				resp, _, err = s.client.Send.Send(context.TODO(), message)
+				if err != nil {
+					logger.Error("Error sending email(POSTAL): %v", err)
+				} else {
+					attrs["postalMessageID"] = resp.MessageID
+				}
+			} else {
+				// Assuming config.ToAddress is a []string for simplicity in this example
+				toAddresses := strings.Join(config.ToAddress, ", ")
+
+				// Prepare email headers and body
+				var emailContent bytes.Buffer
+				emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.FromAddress))
+				emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
+				emailContent.WriteString("Subject: " + subject + "\r\n") // Add a subject
+				emailContent.WriteString("\r\n")                         // End of headers, start of body
+				emailContent.WriteString(emailBody.String())
+
+				err = smtp.SendMail(
+					s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
+					s.smtpAuth,
+					config.FromAddress,
+					config.ToAddress,
+					emailContent.Bytes(),
+				)
+				if err != nil {
+					logger.Error("Error sending email(SMTP): %v", err)
+				}
+			}
 			if err != nil {
 				for _, postEvent := range config.EmmitEventsOnError {
-					// Extract fields from the event data
 					emmitEvent(postEvent, event, attrs, s)
 				}
 			} else {
 				for _, postEvent := range config.EmmitEventsOnSuccess {
-					// Extract fields from the event data
 					emmitEvent(postEvent, event, attrs, s)
 				}
 			}
@@ -102,14 +151,30 @@ func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[strin
 	if postEvent.CopyFullAttribute {
 		attrsJsonStr = event.Attribute
 	} else {
-		attrsFiltered := extractFields(attrs, postEvent.AttributeSpec)
-		attrsJSON, _ := json.Marshal(attrsFiltered)
-		attrsJsonStr = string(attrsJSON)
+		var specAttrs map[string]interface{}
+		if err := json.Unmarshal([]byte(*postEvent.AttributeSpec), &specAttrs); err != nil {
+			logger.Error("Error unmarshalling attribute spec: %v", err)
+			attrsJsonStr = event.Attribute
+		} else {
+			attrsFiltered := extractFields(attrs, specAttrs)
+			if attrsFiltered == nil {
+				attrsJsonStr = event.Attribute
+			} else {
+				attrsJSON, _ := json.Marshal(attrsFiltered)
+				attrsJsonStr = string(attrsJSON)
+			}
+		}
 	}
 	if postEvent.CopyProfileID {
-		s.eventService.CreateEvent(postEvent.EventName, *event.ProfileID, attrsJsonStr)
+		err := s.eventService.CreateEvent(postEvent.EventName, *event.ProfileID, attrsJsonStr)
+		if err != nil {
+			logger.Error("Error creating event: %v", err)
+		}
 	} else {
-		s.eventService.CreateGenericEvent(postEvent.EventName, attrsJsonStr)
+		err := s.eventService.CreateGenericEvent(postEvent.EventName, attrsJsonStr)
+		if err != nil {
+			logger.Error("Error creating event: %v", err)
+		}
 	}
 }
 
@@ -118,6 +183,7 @@ func extractFields(data interface{}, spec interface{}) interface{} {
 	case map[string]interface{}:
 		dataMap, ok := data.(map[string]interface{})
 		if !ok {
+			logger.Error("Data does not match spec structure")
 			return nil // Data does not match spec structure
 		}
 		result := make(map[string]interface{})

@@ -10,6 +10,9 @@ import (
 )
 
 func main() {
+
+	// *** Prepare your action config Start ***
+
 	//jsonData, err := json.MarshalIndent(param.RoutineConfigs, "", "    ")
 	//if err != nil {
 	//	log.Fatalf("Error serializing RoutineConfigs: %v", err)
@@ -17,7 +20,9 @@ func main() {
 	//
 	//fmt.Println(string(jsonData))
 
-	jsonData, err := ioutil.ReadFile("config.json")
+	// *** Prepare your action config End ***
+
+	jsonData, err := ioutil.ReadFile("action_config.json")
 	if err != nil {
 		log.Fatalf("Error reading config file: %v", err)
 	}
@@ -29,11 +34,9 @@ func main() {
 
 	templates := template.Must(template.ParseGlob("templates/*.tmpl"))
 
-	service := service.NewConsumerService(configs, "path.db", templates, &param.SMTPConfig{
-		Host:     "host",
-		Port:     587,
-		Username: "dd",
-		Password: "fd",
+	service := service.NewPostalConsumerService(configs, "your.db", templates, &param.PostalConfig{
+		Endpoint: "https://postal.yourdomain.com",
+		APIKey:   "fdslfkjoeriewi",
 	})
 
 	service.Run()

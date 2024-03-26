@@ -2,6 +2,11 @@
 
 Event Consumer Open Source Service
 
+## [0.1.2] - 2024-03-26
+
+### Fixed
+- a fatal bug while extracting to addresses from json
+
 ## [0.1.1] - 2024-03-26
 
 ### Added

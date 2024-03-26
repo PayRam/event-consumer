@@ -2,6 +2,12 @@
 
 Event Consumer Open Source Service
 
+## [0.1.1] - 2024-03-26
+
+### Added
+- event emitter library updated to latest version
+- made changes in the consumer according to the library
+
 ## [0.1.0] - 2024-03-26
 
 ### Added

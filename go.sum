@@ -1,7 +1,7 @@
 github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97 h1:1//hyKzLBHj3+zWpna+B26WN54ohiW5L05Wr4C6paRg=
 github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97/go.mod h1:oPZtc/mDmTwCAXgSPi0L5KipSt4WZSG8PtqTz0FN6T4=
-github.com/PayRam/event-emitter v1.0.0 h1:iGWJTdYXjL/RgFIkg3w5F2RJg3Y2pY34Hlll2n7z6bg=
-github.com/PayRam/event-emitter v1.0.0/go.mod h1:FtbCNEU8SEWRSWgW/QKZ2ERjclIlLJhqoUtWORqC+wE=
+github.com/PayRam/event-emitter v1.0.2 h1:VV0Neh7pAKFvPvxyVtxAwXj2r+f/DEAfuYuQkSeYvEI=
+github.com/PayRam/event-emitter v1.0.2/go.mod h1:FtbCNEU8SEWRSWgW/QKZ2ERjclIlLJhqoUtWORqC+wE=
 github.com/go-gormigrate/gormigrate/v2 v2.1.2 h1:F/d1hpHbRAvKezziV2CC5KUE82cVe9zTgHSBoOOZ4CY=
 github.com/go-gormigrate/gormigrate/v2 v2.1.2/go.mod h1:9nHVX6z3FCMCQPA7PThGcA55t22yKQfK/Dnsf5i7hUo=
 github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=

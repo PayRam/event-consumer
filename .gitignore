@@ -25,3 +25,5 @@ go.work
 action_config.json
 
 output
+
+templates

@@ -97,9 +97,9 @@ func (s *service) Run() error {
 			var err error
 
 			if s.consumerType == "POSTAL" {
-				err = s.sendEmailUsingPostal(config, subject, emailBody, err, attrs)
+				err = s.sendEmailUsingPostal(config, subject, emailBody, attrs)
 			} else {
-				err = s.sendEmailUsingSMTP(config, subject, emailBody, err)
+				err = s.sendEmailUsingSMTP(config, subject, emailBody)
 			}
 			if err != nil {
 				for _, postEvent := range config.EmmitEventsOnError {
@@ -115,7 +115,7 @@ func (s *service) Run() error {
 	return nil
 }
 
-func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, err error) error {
+func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string, emailBody *bytes.Buffer) error {
 	// Assuming config.ToAddress is a []string for simplicity in this example
 	toAddresses := strings.Join(config.ToAddress, ", ")
 
@@ -127,7 +127,7 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 	emailContent.WriteString("\r\n")                         // End of headers, start of body
 	emailContent.WriteString(emailBody.String())
 
-	err = smtp.SendMail(
+	err := smtp.SendMail(
 		s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
 		s.smtpAuth,
 		config.FromAddress,
@@ -136,11 +136,12 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 	)
 	if err != nil {
 		logger.Error("Error sending email(SMTP): %v", err)
+		return err
 	}
-	return err
+	return nil
 }
 
-func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, err error, attrs map[string]interface{}) error {
+func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
 	message := &postal.SendRequest{
 		To:       config.ToAddress,
 		From:     config.FromAddress,
@@ -148,13 +149,14 @@ func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject strin
 		HTMLBody: emailBody.String(),
 	}
 	var resp *postal.SendResponse
-	resp, _, err = s.client.Send.Send(context.TODO(), message)
+	resp, _, err := s.client.Send.Send(context.TODO(), message)
 	if err != nil {
 		logger.Error("Error sending email(POSTAL): %v", err)
+		return err
 	} else {
 		attrs["postalMessageID"] = resp.MessageID
 	}
-	return err
+	return nil
 }
 
 func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[string]interface{}, s *service) {

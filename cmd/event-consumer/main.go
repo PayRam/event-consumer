@@ -5,8 +5,8 @@ import (
 	"github.com/PayRam/event-consumer/service"
 	"github.com/PayRam/event-consumer/service/param"
 	"html/template"
-	"io/ioutil"
 	"log"
+	"os"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 
 	// *** Prepare your action config End ***
 
-	jsonData, err := ioutil.ReadFile("action_config.json")
+	jsonData, err := os.ReadFile("action_config.json")
 	if err != nil {
 		log.Fatalf("Error reading config file: %v", err)
 	}

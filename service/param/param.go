@@ -1,6 +1,9 @@
 package param
 
-import "github.com/PayRam/event-emitter/service/param"
+import (
+	"github.com/PayRam/event-emitter/service/param"
+	"time"
+)
 
 type ConsumerService interface {
 	Run() error
@@ -29,30 +32,32 @@ type RoutineConfig struct {
 	QueryBuilder         *param.QueryBuilder
 	Subject              string
 	FromAddress          string
-	ToAddress            []string
 	EmailTemplateName    string
 	EmmitEventsOnSuccess []PostEvent
 	EmmitEventsOnError   []PostEvent
 }
 
 var attributeSpecJSON = `{"refId": true, "test1": true, "postalMessageID": true}`
+var Start = -(24 * time.Hour)
+var End = -(1 * time.Hour)
 
 var RoutineConfigs = []RoutineConfig{
 	{
 		QueryBuilder: &param.QueryBuilder{
-			EventName: []string{"deposit-received"},
+			EventNames:             []string{"deposit-received"},
+			CreatedAtRelativeStart: &Start,
+			CreatedAtRelativeEnd:   &End,
 			JoinWhereClause: map[string]param.JoinClause{
 				"json_extract(attribute, '$.refId')": {
 					Clause:  "json_extract(attribute, '$.refId')",
 					Exclude: true,
 				},
 			},
-			QueryBuilderParam: &param.QueryBuilder{
-				EventName: []string{"deposit-received-email-sent", "deposit-received-email-failed"},
+			SubQueryBuilder: &param.QueryBuilder{
+				EventNames: []string{"deposit-received-email-sent", "deposit-received-email-failed"},
 			},
 		},
 		FromAddress:       "sam@yourdomain.com",
-		ToAddress:         []string{"sam@payram.app"},
 		EmailTemplateName: "master.tmpl",
 		EmmitEventsOnSuccess: []PostEvent{
 			{

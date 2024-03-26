@@ -2,6 +2,11 @@
 
 Event Consumer Open Source Service
 
+## [0.1.4] - 2024-03-27
+
+### Fixed
+- small fix
+
 ## [0.1.3] - 2024-03-27
 
 ### Fixed

@@ -97,7 +97,7 @@ func (s *service) Run() error {
 			var err error
 
 			if s.consumerType == "POSTAL" {
-				err = s.sendEmailUsingPostal(config, subject, emailBody, attrs)
+				attrs, err = s.sendEmailUsingPostal(config, subject, emailBody, attrs)
 			} else {
 				err = s.sendEmailUsingSMTP(config, subject, emailBody, attrs)
 			}
@@ -141,7 +141,7 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 	return nil
 }
 
-func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
+func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
 	message := &postal.SendRequest{
 		To:       getToAddresses(attrs),
 		From:     config.FromAddress,
@@ -152,11 +152,11 @@ func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject strin
 	resp, _, err := s.client.Send.Send(context.TODO(), message)
 	if err != nil {
 		logger.Error("Error sending email(POSTAL): %v", err)
-		return err
+		return attrs, err
 	} else {
 		attrs["postalMessageID"] = resp.MessageID
 	}
-	return nil
+	return attrs, nil
 }
 
 func getToAddresses(attrs map[string]interface{}) []string {

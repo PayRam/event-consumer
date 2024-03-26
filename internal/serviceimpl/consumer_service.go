@@ -81,11 +81,12 @@ func (s *service) Run() error {
 			var attrs map[string]interface{}
 			if err := json.Unmarshal([]byte(event.Attribute), &attrs); err != nil {
 				logger.Error("Error unmarshalling event attribute: %v", err)
+				continue
 			}
 			// Generate the email body
 			emailBody := new(bytes.Buffer)
 			if err := s.templates.ExecuteTemplate(emailBody, config.EmailTemplateName, attrs); err != nil {
-				logger.Error("Error unmarshalling event attribute: %v", err)
+				logger.Error("Error executing email template: %v", err)
 			}
 
 			var subject = config.Subject
@@ -96,41 +97,9 @@ func (s *service) Run() error {
 			var err error
 
 			if s.consumerType == "POSTAL" {
-				message := &postal.SendRequest{
-					To:       config.ToAddress,
-					From:     config.FromAddress,
-					Subject:  subject,
-					HTMLBody: emailBody.String(),
-				}
-				var resp *postal.SendResponse
-				resp, _, err = s.client.Send.Send(context.TODO(), message)
-				if err != nil {
-					logger.Error("Error sending email(POSTAL): %v", err)
-				} else {
-					attrs["postalMessageID"] = resp.MessageID
-				}
+				err = s.sendEmailUsingPostal(config, subject, emailBody, err, attrs)
 			} else {
-				// Assuming config.ToAddress is a []string for simplicity in this example
-				toAddresses := strings.Join(config.ToAddress, ", ")
-
-				// Prepare email headers and body
-				var emailContent bytes.Buffer
-				emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.FromAddress))
-				emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
-				emailContent.WriteString("Subject: " + subject + "\r\n") // Add a subject
-				emailContent.WriteString("\r\n")                         // End of headers, start of body
-				emailContent.WriteString(emailBody.String())
-
-				err = smtp.SendMail(
-					s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
-					s.smtpAuth,
-					config.FromAddress,
-					config.ToAddress,
-					emailContent.Bytes(),
-				)
-				if err != nil {
-					logger.Error("Error sending email(SMTP): %v", err)
-				}
+				err = s.sendEmailUsingSMTP(config, subject, emailBody, err)
 			}
 			if err != nil {
 				for _, postEvent := range config.EmmitEventsOnError {
@@ -144,6 +113,48 @@ func (s *service) Run() error {
 		}
 	}
 	return nil
+}
+
+func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, err error) error {
+	// Assuming config.ToAddress is a []string for simplicity in this example
+	toAddresses := strings.Join(config.ToAddress, ", ")
+
+	// Prepare email headers and body
+	var emailContent bytes.Buffer
+	emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.FromAddress))
+	emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
+	emailContent.WriteString("Subject: " + subject + "\r\n") // Add a subject
+	emailContent.WriteString("\r\n")                         // End of headers, start of body
+	emailContent.WriteString(emailBody.String())
+
+	err = smtp.SendMail(
+		s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
+		s.smtpAuth,
+		config.FromAddress,
+		config.ToAddress,
+		emailContent.Bytes(),
+	)
+	if err != nil {
+		logger.Error("Error sending email(SMTP): %v", err)
+	}
+	return err
+}
+
+func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, err error, attrs map[string]interface{}) error {
+	message := &postal.SendRequest{
+		To:       config.ToAddress,
+		From:     config.FromAddress,
+		Subject:  subject,
+		HTMLBody: emailBody.String(),
+	}
+	var resp *postal.SendResponse
+	resp, _, err = s.client.Send.Send(context.TODO(), message)
+	if err != nil {
+		logger.Error("Error sending email(POSTAL): %v", err)
+	} else {
+		attrs["postalMessageID"] = resp.MessageID
+	}
+	return err
 }
 
 func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[string]interface{}, s *service) {

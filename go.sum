@@ -1,0 +1,16 @@
+github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97 h1:1//hyKzLBHj3+zWpna+B26WN54ohiW5L05Wr4C6paRg=
+github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97/go.mod h1:oPZtc/mDmTwCAXgSPi0L5KipSt4WZSG8PtqTz0FN6T4=
+github.com/PayRam/event-emitter v1.0.0 h1:iGWJTdYXjL/RgFIkg3w5F2RJg3Y2pY34Hlll2n7z6bg=
+github.com/PayRam/event-emitter v1.0.0/go.mod h1:FtbCNEU8SEWRSWgW/QKZ2ERjclIlLJhqoUtWORqC+wE=
+github.com/go-gormigrate/gormigrate/v2 v2.1.2 h1:F/d1hpHbRAvKezziV2CC5KUE82cVe9zTgHSBoOOZ4CY=
+github.com/go-gormigrate/gormigrate/v2 v2.1.2/go.mod h1:9nHVX6z3FCMCQPA7PThGcA55t22yKQfK/Dnsf5i7hUo=
+github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
+github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
+github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=
+github.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
+github.com/mattn/go-sqlite3 v1.14.17 h1:mCRHCLDUBXgpKAqIKsaAaAsrAlbkeomtRFKXh2L6YIM=
+github.com/mattn/go-sqlite3 v1.14.17/go.mod h1:2eHXhiwb8IkHr+BDWZGa96P6+rkvnG63S2DGjv9HUNg=
+gorm.io/driver/sqlite v1.5.5 h1:7MDMtUZhV065SilG62E0MquljeArQZNfJnjd9i9gx3E=
+gorm.io/driver/sqlite v1.5.5/go.mod h1:6NgQ7sQWAIFsPrJJl1lSNSu2TABh0ZZ/zm5fosATavE=
+gorm.io/gorm v1.25.8 h1:WAGEZ/aEcznN4D03laj8DKnehe1e9gYQAjW8xyPRdeo=
+gorm.io/gorm v1.25.8/go.mod h1:hbnx/Oo0ChWMn1BIhpy1oYozzpM15i4YPuHDmfYtwg8=

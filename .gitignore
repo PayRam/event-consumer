@@ -19,3 +19,9 @@
 
 # Go workspace file
 go.work
+
+.idea
+
+action_config.json
+
+output

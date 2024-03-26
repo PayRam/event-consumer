@@ -154,7 +154,7 @@ func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject strin
 		logger.Error("Error sending email(POSTAL): %v", err)
 		return attrs, err
 	} else {
-		attrs["postalMessageID"] = resp.MessageID
+		attrs["PostalMessageID"] = resp.MessageID
 	}
 	return attrs, nil
 }

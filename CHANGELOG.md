@@ -2,10 +2,15 @@
 
 Event Consumer Open Source Service
 
+## [0.1.6] - 2024-03-28
+
+### Fixed
+- small fix. removed hardcoded template name
+
 ## [0.1.5] - 2024-03-28
 
 ### Fixed
-escaping characters issue
+- escaping characters issue
 
 ## [0.1.4] - 2024-03-27
 

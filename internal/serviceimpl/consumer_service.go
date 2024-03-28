@@ -89,7 +89,6 @@ func (s *service) Run() error {
 					attrs[k] = template.HTML(strVal)
 				}
 			}
-			config.EmailTemplateName = "master.tmpl"
 			// Generate the email body
 			emailBody := new(bytes.Buffer)
 			if err := s.templates.ExecuteTemplate(emailBody, config.EmailTemplateName, attrs); err != nil {

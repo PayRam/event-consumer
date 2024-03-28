@@ -2,6 +2,11 @@
 
 Event Consumer Open Source Service
 
+## [0.1.5] - 2024-03-28
+
+### Fixed
+escaping characters issue
+
 ## [0.1.4] - 2024-03-27
 
 ### Fixed

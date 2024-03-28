@@ -83,6 +83,13 @@ func (s *service) Run() error {
 				logger.Error("Error unmarshalling event attribute: %v", err)
 				continue
 			}
+			// Convert all string fields in attrs to template.HTML
+			for k, v := range attrs {
+				if strVal, ok := v.(string); ok {
+					attrs[k] = template.HTML(strVal)
+				}
+			}
+			config.EmailTemplateName = "master.tmpl"
 			// Generate the email body
 			emailBody := new(bytes.Buffer)
 			if err := s.templates.ExecuteTemplate(emailBody, config.EmailTemplateName, attrs); err != nil {

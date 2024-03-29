@@ -2,6 +2,11 @@
 
 Event Consumer Open Source Service
 
+## [0.1.7] - 2024-03-29
+
+### Change
+- changed the behaviour of json config
+
 ## [0.1.6] - 2024-03-28
 
 ### Fixed

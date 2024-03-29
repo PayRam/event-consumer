@@ -25,7 +25,7 @@ type PostEvent struct {
 	EventName         string
 	CopyProfileID     bool
 	CopyFullAttribute bool
-	AttributeSpec     *string
+	AttributeSpec     map[string]bool
 }
 
 type RoutineConfig struct {
@@ -63,7 +63,12 @@ var RoutineConfigs = []RoutineConfig{
 			{
 				EventName:     "deposit-received-email-sent",
 				CopyProfileID: true,
-				AttributeSpec: &attributeSpecJSON,
+				AttributeSpec: map[string]bool{
+					"ToAddresses": true,
+					"CustomerID":  true,
+					"Amount":      true,
+					"MemberID":    true,
+				},
 			},
 		},
 		EmmitEventsOnError: []PostEvent{

@@ -188,12 +188,8 @@ func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[strin
 	if postEvent.CopyFullAttribute {
 		attrsJsonStr = event.Attribute
 	} else {
-		var specAttrs map[string]interface{}
-		if err := json.Unmarshal([]byte(*postEvent.AttributeSpec), &specAttrs); err != nil {
-			logger.Error("Error unmarshalling attribute spec: %v", err)
-			attrsJsonStr = event.Attribute
-		} else {
-			attrsFiltered := extractFields(attrs, specAttrs)
+		if postEvent.AttributeSpec != nil {
+			attrsFiltered := extractFields(attrs, postEvent.AttributeSpec)
 			if attrsFiltered == nil {
 				attrsJsonStr = event.Attribute
 			} else {
@@ -201,6 +197,7 @@ func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[strin
 				attrsJsonStr = string(attrsJSON)
 			}
 		}
+
 	}
 	if postEvent.CopyProfileID {
 		err := s.eventService.CreateEvent(postEvent.EventName, *event.ProfileID, attrsJsonStr)
@@ -217,7 +214,7 @@ func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[strin
 
 func extractFields(data interface{}, spec interface{}) interface{} {
 	switch specTyped := spec.(type) {
-	case map[string]interface{}:
+	case map[string]bool:
 		dataMap, ok := data.(map[string]interface{})
 		if !ok {
 			logger.Error("Data does not match spec structure")

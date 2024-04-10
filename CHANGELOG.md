@@ -2,6 +2,12 @@
 
 Event Consumer Open Source Service
 
+## [0.1.8] - 2024-04-10
+
+### Added
+- added support to retrieve subject of the email from template
+- structural changes
+
 ## [0.1.7] - 2024-03-29
 
 ### Change

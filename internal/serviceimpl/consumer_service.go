@@ -95,9 +95,16 @@ func (s *service) Run() error {
 				logger.Error("Error executing email template: %v", err)
 			}
 
-			var subject = config.Subject
-			if attrs["emailSubject"] != nil {
-				subject = attrs["emailSubject"].(string)
+			var subject = config.SendRequest.Subject
+
+			if config.SubjectTemplateName != nil {
+				subjectBuffer := new(bytes.Buffer)
+				if err := s.templates.ExecuteTemplate(subjectBuffer, *config.SubjectTemplateName, attrs); err != nil {
+					subject = config.SendRequest.Subject
+				} else {
+					// If there's no error, use the executed template as the subject
+					subject = subjectBuffer.String()
+				}
 			}
 
 			var err error
@@ -127,7 +134,7 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 
 	// Prepare email headers and body
 	var emailContent bytes.Buffer
-	emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.FromAddress))
+	emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.SendRequest.From))
 	emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
 	emailContent.WriteString("Subject: " + subject + "\r\n") // Add a subject
 	emailContent.WriteString("\r\n")                         // End of headers, start of body
@@ -136,7 +143,7 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 	err := smtp.SendMail(
 		s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
 		s.smtpAuth,
-		config.FromAddress,
+		config.SendRequest.From,
 		getToAddresses(attrs),
 		emailContent.Bytes(),
 	)
@@ -148,12 +155,21 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 }
 
 func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
-	message := &postal.SendRequest{
-		To:       getToAddresses(attrs),
-		From:     config.FromAddress,
-		Subject:  subject,
-		HTMLBody: emailBody.String(),
+
+	toAddresses := getToAddresses(attrs)
+
+	message := &config.SendRequest
+
+	message.Subject = subject
+
+	if toAddresses != nil && len(toAddresses) > 0 {
+		message.To = toAddresses
 	}
+
+	if emailBody.String() != "" {
+		message.HTMLBody = emailBody.String()
+	}
+
 	var resp *postal.SendResponse
 	resp, _, err := s.client.Send.Send(context.TODO(), message)
 	if err != nil {

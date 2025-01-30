@@ -216,12 +216,12 @@ func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[strin
 
 	}
 	if postEvent.CopyProfileID {
-		err := s.eventService.CreateEvent(postEvent.EventName, *event.ProfileID, attrsJsonStr)
+		_, err := s.eventService.CreateEvent(postEvent.EventName, attrsJsonStr, event.ProfileID)
 		if err != nil {
 			logger.Error("Error creating event: %v", err)
 		}
 	} else {
-		err := s.eventService.CreateGenericEvent(postEvent.EventName, attrsJsonStr)
+		_, err := s.eventService.CreateSimpleEvent(postEvent.EventName, attrsJsonStr)
 		if err != nil {
 			logger.Error("Error creating event: %v", err)
 		}

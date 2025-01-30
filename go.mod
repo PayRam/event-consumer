@@ -4,7 +4,7 @@ go 1.21.6
 
 require (
 	github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97
-	github.com/PayRam/event-emitter v1.0.2
+	github.com/PayRam/event-emitter v1.0.3
 	gorm.io/gorm v1.25.8
 )
 

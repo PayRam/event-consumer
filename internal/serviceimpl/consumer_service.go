@@ -3,6 +3,7 @@ package serviceimpl
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"github.com/Pacerino/postal-go"
@@ -13,7 +14,6 @@ import (
 	"gorm.io/gorm"
 	"html/template"
 	"net/smtp"
-	"strconv"
 	"strings"
 )
 
@@ -129,8 +129,8 @@ func (s *service) Run() error {
 }
 
 func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
-	// Assuming config.ToAddress is a []string for simplicity in this example
-	toAddresses := strings.Join(getToAddresses(attrs), ", ")
+	toAddresses := getToAddresses(attrs)
+	toHeader := strings.Join(toAddresses, ", ")
 
 	if v, ok := attrs["EmailSendRequestFrom"].(template.HTML); ok {
 		config.SendRequest.From = string(v)
@@ -138,27 +138,105 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 	if v, ok := attrs["EmailSendRequestReplyTo"].(template.HTML); ok {
 		config.SendRequest.ReplyTo = string(v)
 	}
-	// Prepare email headers and body
-	var emailContent bytes.Buffer
-	emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.SendRequest.From))
-	emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
-	emailContent.WriteString("Subject: " + subject + "\r\n") // Add a subject
-	emailContent.WriteString("\r\n")                         // End of headers, start of body
-	emailContent.WriteString(emailBody.String())
 
-	err := smtp.SendMail(
-		s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
-		s.smtpAuth,
-		config.SendRequest.From,
-		getToAddresses(attrs),
-		emailContent.Bytes(),
-	)
+	// Build the message
+	var msg bytes.Buffer
+	msg.WriteString(fmt.Sprintf("From: %s\r\n", config.SendRequest.From))
+	msg.WriteString(fmt.Sprintf("To: %s\r\n", toHeader))
+	msg.WriteString(fmt.Sprintf("Reply-To: %s\r\n", config.SendRequest.ReplyTo))
+	msg.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
+	msg.WriteString("MIME-Version: 1.0\r\n")
+	msg.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
+	msg.WriteString("\r\n")
+	msg.WriteString(emailBody.String())
+
+	// Connect to the SMTP server
+	addr := fmt.Sprintf("%s:%d", s.smtpConfig.Host, s.smtpConfig.Port)
+	conn, err := smtp.Dial(addr)
 	if err != nil {
-		logger.Error("Error sending email(SMTP): %v", err)
+		logger.Error("SMTP dial failed: %v", err)
 		return err
 	}
-	return nil
+	defer conn.Close()
+
+	// Upgrade to TLS
+	if ok, _ := conn.Extension("STARTTLS"); ok {
+		tlsconfig := &tls.Config{
+			InsecureSkipVerify: true, // ⚠️ Use false in production with verified certs
+			ServerName:         s.smtpConfig.Host,
+		}
+		if err := conn.StartTLS(tlsconfig); err != nil {
+			logger.Error("STARTTLS failed: %v", err)
+			return err
+		}
+	} else {
+		logger.Error("SMTP server does not support STARTTLS")
+		return fmt.Errorf("unencrypted connection and STARTTLS not supported")
+	}
+
+	// Authenticate
+	if err := conn.Auth(s.smtpAuth); err != nil {
+		logger.Error("SMTP authentication failed: %v", err)
+		return err
+	}
+
+	// Set the sender and recipient, and send the email
+	if err := conn.Mail(config.SendRequest.From); err != nil {
+		return err
+	}
+	for _, addr := range toAddresses {
+		if err := conn.Rcpt(addr); err != nil {
+			return err
+		}
+	}
+
+	wc, err := conn.Data()
+	if err != nil {
+		return err
+	}
+	_, err = wc.Write(msg.Bytes())
+	if err != nil {
+		return err
+	}
+	err = wc.Close()
+	if err != nil {
+		return err
+	}
+
+	return conn.Quit()
 }
+
+//func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
+//	// Assuming config.ToAddress is a []string for simplicity in this example
+//	toAddresses := strings.Join(getToAddresses(attrs), ", ")
+//
+//	if v, ok := attrs["EmailSendRequestFrom"].(template.HTML); ok {
+//		config.SendRequest.From = string(v)
+//	}
+//	if v, ok := attrs["EmailSendRequestReplyTo"].(template.HTML); ok {
+//		config.SendRequest.ReplyTo = string(v)
+//	}
+//	// Prepare email headers and body
+//	var emailContent bytes.Buffer
+//	emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.SendRequest.From))
+//	emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
+//	emailContent.WriteString("Subject: " + subject + "\r\n") // Add a subject
+//	emailContent.WriteString("\r\n")                         // End of headers, start of body
+//	emailContent.WriteString(emailBody.String())
+//
+//	err := smtp.SendMail(
+//		s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
+//		s.smtpAuth,
+//		config.SendRequest.From,
+//		getToAddresses(attrs),
+//		emailContent.Bytes(),
+//	)
+//	if err != nil {
+//		logger.Error("Error sending email(SMTP): %v", err)
+//		return err
+//	}
+//	return nil
+//}
 
 func (s *service) sendEmailUsingPostal(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
 

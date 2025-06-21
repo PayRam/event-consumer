@@ -12,6 +12,7 @@ import (
 	service2 "github.com/PayRam/event-emitter/service"
 	param2 "github.com/PayRam/event-emitter/service/param"
 	gomail "gopkg.in/mail.v2"
+	"strings"
 
 	"gorm.io/gorm"
 	"html/template"
@@ -144,6 +145,10 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 		config.SendRequest.ReplyTo = string(v)
 	}
 
+	if strings.TrimSpace(config.SendRequest.From) == "" {
+		return fmt.Errorf("email 'From' address is required but not set")
+	}
+
 	// Setup message
 	m := gomail.NewMessage()
 	m.SetHeader("From", config.SendRequest.From)
@@ -175,7 +180,7 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 
 	d := gomail.NewDialer(host, port, username, password)
 	d.SSL = useSSL
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	d.TLSConfig = &tls.Config{ServerName: s.smtpConfig.Host}
 
 	// Send
 	if err := d.DialAndSend(m); err != nil {
@@ -185,38 +190,6 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 
 	return nil
 }
-
-//func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
-//	// Assuming config.ToAddress is a []string for simplicity in this example
-//	toAddresses := strings.Join(getToAddresses(attrs), ", ")
-//
-//	if v, ok := attrs["EmailSendRequestFrom"].(template.HTML); ok {
-//		config.SendRequest.From = string(v)
-//	}
-//	if v, ok := attrs["EmailSendRequestReplyTo"].(template.HTML); ok {
-//		config.SendRequest.ReplyTo = string(v)
-//	}
-//	// Prepare email headers and body
-//	var emailContent bytes.Buffer
-//	emailContent.WriteString(fmt.Sprintf("From: %s\r\n", config.SendRequest.From))
-//	emailContent.WriteString(fmt.Sprintf("To: %s\r\n", toAddresses))
-//	emailContent.WriteString("Subject: " + subject + "\r\n") // Add a subject
-//	emailContent.WriteString("\r\n")                         // End of headers, start of body
-//	emailContent.WriteString(emailBody.String())
-//
-//	err := smtp.SendMail(
-//		s.smtpConfig.Host+":"+strconv.Itoa(s.smtpConfig.Port),
-//		s.smtpAuth,
-//		config.SendRequest.From,
-//		getToAddresses(attrs),
-//		emailContent.Bytes(),
-//	)
-//	if err != nil {
-//		logger.Error("Error sending email(SMTP): %v", err)
-//		return err
-//	}
-//	return nil
-//}
 
 func (s *service) sendEmailUsingPostal(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
 

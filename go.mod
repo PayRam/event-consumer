@@ -5,6 +5,7 @@ go 1.21.6
 require (
 	github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97
 	github.com/PayRam/event-emitter v1.0.3
+	github.com/go-mail/mail v2.3.1+incompatible
 	gorm.io/gorm v1.25.8
 )
 
@@ -13,5 +14,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/mattn/go-sqlite3 v1.14.17 // indirect
+	gopkg.in/alexcesaro/quotedprintable.v3 v3.0.0-20150716171945-2caba252f4dc // indirect
+	gopkg.in/mail.v2 v2.3.1 // indirect
 	gorm.io/driver/sqlite v1.5.5 // indirect
 )

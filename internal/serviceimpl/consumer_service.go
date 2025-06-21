@@ -11,10 +11,11 @@ import (
 	"github.com/PayRam/event-consumer/service/param"
 	service2 "github.com/PayRam/event-emitter/service"
 	param2 "github.com/PayRam/event-emitter/service/param"
+	gomail "gopkg.in/mail.v2"
+
 	"gorm.io/gorm"
 	"html/template"
 	"net/smtp"
-	"strings"
 )
 
 type service struct {
@@ -129,81 +130,60 @@ func (s *service) Run() error {
 }
 
 func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
-	toAddresses := getToAddresses(attrs)
-	toHeader := strings.Join(toAddresses, ", ")
-
-	if v, ok := attrs["EmailSendRequestFrom"].(template.HTML); ok {
-		config.SendRequest.From = string(v)
-	}
-	if v, ok := attrs["EmailSendRequestReplyTo"].(template.HTML); ok {
-		config.SendRequest.ReplyTo = string(v)
+	// Extract recipient addresses
+	toAddresses := getToAddresses(attrs) // Should return []string
+	if len(toAddresses) == 0 {
+		return fmt.Errorf("no recipient email addresses provided")
 	}
 
-	// Build the message
-	var msg bytes.Buffer
-	msg.WriteString(fmt.Sprintf("From: %s\r\n", config.SendRequest.From))
-	msg.WriteString(fmt.Sprintf("To: %s\r\n", toHeader))
-	msg.WriteString(fmt.Sprintf("Reply-To: %s\r\n", config.SendRequest.ReplyTo))
-	msg.WriteString(fmt.Sprintf("Subject: %s\r\n", subject))
-	msg.WriteString("MIME-Version: 1.0\r\n")
-	msg.WriteString("Content-Type: text/html; charset=\"UTF-8\"\r\n")
-	msg.WriteString("\r\n")
-	msg.WriteString(emailBody.String())
-
-	// Connect to the SMTP server
-	addr := fmt.Sprintf("%s:%d", s.smtpConfig.Host, s.smtpConfig.Port)
-	conn, err := smtp.Dial(addr)
-	if err != nil {
-		logger.Error("SMTP dial failed: %v", err)
-		return err
+	// Handle dynamic From/Reply-To
+	if v, ok := attrs["EmailSendRequestFrom"].(string); ok {
+		config.SendRequest.From = v
 	}
-	defer conn.Close()
-
-	// Upgrade to TLS
-	if ok, _ := conn.Extension("STARTTLS"); ok {
-		tlsconfig := &tls.Config{
-			InsecureSkipVerify: true, // ⚠️ Use false in production with verified certs
-			ServerName:         s.smtpConfig.Host,
-		}
-		if err := conn.StartTLS(tlsconfig); err != nil {
-			logger.Error("STARTTLS failed: %v", err)
-			return err
-		}
-	} else {
-		logger.Error("SMTP server does not support STARTTLS")
-		return fmt.Errorf("unencrypted connection and STARTTLS not supported")
+	if v, ok := attrs["EmailSendRequestReplyTo"].(string); ok {
+		config.SendRequest.ReplyTo = v
 	}
 
-	// Authenticate
-	if err := conn.Auth(s.smtpAuth); err != nil {
-		logger.Error("SMTP authentication failed: %v", err)
-		return err
+	// Setup message
+	m := gomail.NewMessage()
+	m.SetHeader("From", config.SendRequest.From)
+	m.SetHeader("To", toAddresses...)
+	m.SetHeader("Subject", subject)
+
+	if config.SendRequest.ReplyTo != "" {
+		m.SetHeader("Reply-To", config.SendRequest.ReplyTo)
 	}
 
-	// Set the sender and recipient, and send the email
-	if err := conn.Mail(config.SendRequest.From); err != nil {
-		return err
-	}
-	for _, addr := range toAddresses {
-		if err := conn.Rcpt(addr); err != nil {
-			return err
-		}
+	m.SetBody("text/html", emailBody.String())
+
+	useSSL := false
+	switch s.smtpConfig.Port {
+	case 465:
+		useSSL = true // Implicit SSL (SMTPS)
+	case 587, 2525:
+		useSSL = false // STARTTLS or plain (TLS upgraded after connection)
+	default:
+		useSSL = false // Default to false; log if needed
 	}
 
-	wc, err := conn.Data()
-	if err != nil {
-		return err
-	}
-	_, err = wc.Write(msg.Bytes())
-	if err != nil {
-		return err
-	}
-	err = wc.Close()
-	if err != nil {
+	// Setup dialer
+	port := s.smtpConfig.Port // Assume this is int
+	host := s.smtpConfig.Host
+	username := s.smtpConfig.Username
+	password := s.smtpConfig.Password
+	//useSSL := useSSL // true if port 465, false otherwise
+
+	d := gomail.NewDialer(host, port, username, password)
+	d.SSL = useSSL
+	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+
+	// Send
+	if err := d.DialAndSend(m); err != nil {
+		logger.Error("Error sending email via SMTP: %v", err)
 		return err
 	}
 
-	return conn.Quit()
+	return nil
 }
 
 //func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {

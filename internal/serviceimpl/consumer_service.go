@@ -161,16 +161,6 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 
 	m.SetBody("text/html", emailBody.String())
 
-	useSSL := false
-	switch s.smtpConfig.Port {
-	case 465:
-		useSSL = true // Implicit SSL (SMTPS)
-	case 587, 2525:
-		useSSL = false // STARTTLS or plain (TLS upgraded after connection)
-	default:
-		useSSL = false // Default to false; log if needed
-	}
-
 	// Setup dialer
 	port := s.smtpConfig.Port // Assume this is int
 	host := s.smtpConfig.Host
@@ -179,7 +169,7 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 	//useSSL := useSSL // true if port 465, false otherwise
 
 	d := gomail.NewDialer(host, port, username, password)
-	d.SSL = useSSL
+	d.SSL = s.smtpConfig.UseTLS
 	d.TLSConfig = &tls.Config{ServerName: s.smtpConfig.Host}
 
 	// Send

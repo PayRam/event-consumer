@@ -14,6 +14,7 @@ type SMTPConfig struct {
 	Port     int
 	Username string
 	Password string
+	UseTLS   bool
 }
 
 type PostalConfig struct {

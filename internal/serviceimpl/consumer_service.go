@@ -132,11 +132,11 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 	// Assuming config.ToAddress is a []string for simplicity in this example
 	toAddresses := strings.Join(getToAddresses(attrs), ", ")
 
-	if v, ok := attrs["EmailSendRequestFrom"].(string); ok {
-		config.SendRequest.From = v
+	if v, ok := attrs["EmailSendRequestFrom"].(template.HTML); ok {
+		config.SendRequest.From = string(v)
 	}
-	if v, ok := attrs["EmailSendRequestReplyTo"].(string); ok {
-		config.SendRequest.ReplyTo = v
+	if v, ok := attrs["EmailSendRequestReplyTo"].(template.HTML); ok {
+		config.SendRequest.ReplyTo = string(v)
 	}
 	// Prepare email headers and body
 	var emailContent bytes.Buffer
@@ -163,11 +163,11 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 func (s *service) sendEmailUsingPostal(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
 
 	toAddresses := getToAddresses(attrs)
-	if v, ok := attrs["EmailSendRequestFrom"].(string); ok {
-		config.SendRequest.From = v
+	if v, ok := attrs["EmailSendRequestFrom"].(template.HTML); ok {
+		config.SendRequest.From = string(v)
 	}
-	if v, ok := attrs["EmailSendRequestReplyTo"].(string); ok {
-		config.SendRequest.ReplyTo = v
+	if v, ok := attrs["EmailSendRequestReplyTo"].(template.HTML); ok {
+		config.SendRequest.ReplyTo = string(v)
 	}
 
 	message := &config.SendRequest

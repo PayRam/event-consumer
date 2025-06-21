@@ -137,11 +137,11 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 	}
 
 	// Handle dynamic From/Reply-To
-	if v, ok := attrs["EmailSendRequestFrom"].(string); ok {
-		config.SendRequest.From = v
+	if v, ok := attrs["EmailSendRequestFrom"].(template.HTML); ok {
+		config.SendRequest.From = string(v)
 	}
-	if v, ok := attrs["EmailSendRequestReplyTo"].(string); ok {
-		config.SendRequest.ReplyTo = v
+	if v, ok := attrs["EmailSendRequestReplyTo"].(template.HTML); ok {
+		config.SendRequest.ReplyTo = string(v)
 	}
 
 	// Setup message

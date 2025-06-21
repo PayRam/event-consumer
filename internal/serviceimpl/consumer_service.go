@@ -110,9 +110,9 @@ func (s *service) Run() error {
 			var err error
 
 			if s.consumerType == "POSTAL" {
-				attrs, err = s.sendEmailUsingPostal(config, subject, emailBody, attrs)
+				attrs, err = s.sendEmailUsingPostal(&config, subject, emailBody, attrs)
 			} else {
-				err = s.sendEmailUsingSMTP(config, subject, emailBody, attrs)
+				err = s.sendEmailUsingSMTP(&config, subject, emailBody, attrs)
 			}
 			if err != nil {
 				for _, postEvent := range config.EmmitEventsOnError {
@@ -128,7 +128,7 @@ func (s *service) Run() error {
 	return nil
 }
 
-func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
+func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
 	// Assuming config.ToAddress is a []string for simplicity in this example
 	toAddresses := strings.Join(getToAddresses(attrs), ", ")
 
@@ -160,7 +160,7 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 	return nil
 }
 
-func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
+func (s *service) sendEmailUsingPostal(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
 
 	toAddresses := getToAddresses(attrs)
 	if v, ok := attrs["EmailSendRequestFrom"].(string); ok {

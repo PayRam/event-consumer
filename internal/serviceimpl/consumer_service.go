@@ -133,17 +133,17 @@ func (s *service) sendEmailUsingSMTP(config param.RoutineConfig, subject string,
 	toAddresses := strings.Join(getToAddresses(attrs), ", ")
 
 	if attrs["EmailSendRequestFrom"] != nil {
-		if from, ok := attrs["EmailSendRequestFrom"].(string); ok {
-			config.SendRequest.From = from
+		if from, ok := attrs["EmailSendRequestFrom"].(*string); ok {
+			config.SendRequest.From = *from
 		} else {
-			config.SendRequest.From = ""
+			config.SendRequest.From = "No Reply <noreply@nodomain.com>"
 		}
 	}
 	if attrs["EmailSendRequestReplyTo"] != nil {
-		if replyTo, ok := attrs["EmailSendRequestReplyTo"].(string); ok {
-			config.SendRequest.ReplyTo = replyTo
+		if replyTo, ok := attrs["EmailSendRequestReplyTo"].(*string); ok {
+			config.SendRequest.ReplyTo = *replyTo
 		} else {
-			config.SendRequest.ReplyTo = ""
+			config.SendRequest.ReplyTo = "noreply@nodomain.com"
 		}
 	}
 	// Prepare email headers and body
@@ -172,17 +172,17 @@ func (s *service) sendEmailUsingPostal(config param.RoutineConfig, subject strin
 
 	toAddresses := getToAddresses(attrs)
 	if attrs["EmailSendRequestFrom"] != nil {
-		if from, ok := attrs["EmailSendRequestFrom"].(string); ok {
-			config.SendRequest.From = from
+		if from, ok := attrs["EmailSendRequestFrom"].(*string); ok {
+			config.SendRequest.From = *from
 		} else {
-			config.SendRequest.From = ""
+			config.SendRequest.From = "No Reply <noreply@nodomain.com>"
 		}
 	}
 	if attrs["EmailSendRequestReplyTo"] != nil {
-		if replyTo, ok := attrs["EmailSendRequestReplyTo"].(string); ok {
-			config.SendRequest.ReplyTo = replyTo
+		if replyTo, ok := attrs["EmailSendRequestReplyTo"].(*string); ok {
+			config.SendRequest.ReplyTo = *replyTo
 		} else {
-			config.SendRequest.ReplyTo = ""
+			config.SendRequest.ReplyTo = "noreply@nodomain.com"
 		}
 	}
 

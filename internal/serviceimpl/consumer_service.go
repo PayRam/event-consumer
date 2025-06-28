@@ -95,6 +95,7 @@ func (s *service) Run() error {
 			emailBody := new(bytes.Buffer)
 			if err := s.templates.ExecuteTemplate(emailBody, config.EmailTemplateName, attrs); err != nil {
 				logger.Error("Error executing email template: %v", err)
+				continue
 			}
 
 			var subject = config.SendRequest.Subject

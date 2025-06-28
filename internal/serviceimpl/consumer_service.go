@@ -118,12 +118,17 @@ func (s *service) Run() error {
 				err = s.sendEmailUsingSMTP(&config, subject, emailBody, attrs)
 			}
 			if err != nil {
+				extraInfoMap := map[string]any{
+					"error": err.Error(),
+				}
+				extraInfoBytes, _ := json.Marshal(extraInfoMap)
+				extraInfoStr := string(extraInfoBytes)
 				for _, postEvent := range config.EmmitEventsOnError {
-					emmitEvent(postEvent, event, attrs, s)
+					s.emmitEvent(postEvent, event, attrs, &extraInfoStr)
 				}
 			} else {
 				for _, postEvent := range config.EmmitEventsOnSuccess {
-					emmitEvent(postEvent, event, attrs, s)
+					s.emmitEvent(postEvent, event, attrs, nil)
 				}
 			}
 		}
@@ -236,7 +241,7 @@ func getToAddresses(attrs map[string]interface{}) []string {
 }
 
 // emmitEvent creates an event based on the provided postEvent configuration and the event data.
-func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[string]interface{}, s *service) {
+func (s *service) emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[string]interface{}, into *string) {
 	var attrsJsonStr string
 	if postEvent.CopyFullAttribute {
 		attrsJsonStr = event.Attribute
@@ -253,14 +258,28 @@ func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[strin
 
 	}
 	if postEvent.CopyProfileID {
-		_, err := s.eventService.CreateEvent(postEvent.EventName, attrsJsonStr, event.ProfileID)
-		if err != nil {
-			logger.Error("Error creating event: %v", err)
+		if into != nil && strings.TrimSpace(*into) != "" {
+			_, err := s.eventService.CreateEventWithInfo(postEvent.EventName, attrsJsonStr, strings.TrimSpace(*into), event.ProfileID)
+			if err != nil {
+				logger.Error("Error creating event with info: %v", err)
+			}
+		} else {
+			_, err := s.eventService.CreateEvent(postEvent.EventName, attrsJsonStr, event.ProfileID)
+			if err != nil {
+				logger.Error("Error creating event: %v", err)
+			}
 		}
 	} else {
-		_, err := s.eventService.CreateSimpleEvent(postEvent.EventName, attrsJsonStr)
-		if err != nil {
-			logger.Error("Error creating event: %v", err)
+		if into != nil && strings.TrimSpace(*into) != "" {
+			_, err := s.eventService.CreateEventWithInfo(postEvent.EventName, attrsJsonStr, strings.TrimSpace(*into), nil)
+			if err != nil {
+				logger.Error("Error creating event with info: %v", err)
+			}
+		} else {
+			_, err := s.eventService.CreateSimpleEvent(postEvent.EventName, attrsJsonStr)
+			if err != nil {
+				logger.Error("Error creating event: %v", err)
+			}
 		}
 	}
 }

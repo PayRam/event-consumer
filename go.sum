@@ -2,6 +2,8 @@ github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97 h1:1//hyKzLBHj3
 github.com/Pacerino/postal-go v0.0.0-20240122224334-7b216dcadf97/go.mod h1:oPZtc/mDmTwCAXgSPi0L5KipSt4WZSG8PtqTz0FN6T4=
 github.com/PayRam/event-emitter v1.0.3 h1:XDebNyKjD2IV1qCdhmyYFvJTzuzTAOUiLOc3pUNoDvE=
 github.com/PayRam/event-emitter v1.0.3/go.mod h1:7hvzh85/2en27TSq9Qt2cEv+Z4PXyQHTBgoZHLJGiII=
+github.com/PayRam/event-emitter v1.0.6 h1:Hj3aplNCdjL94+ETRb6yko0bWGA1R/ycWyajGsCYmls=
+github.com/PayRam/event-emitter v1.0.6/go.mod h1:Z8jY/ZaPYw0CrD1YOM74kDwESG8rbsjOdKAB5qqSHt0=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/go-gormigrate/gormigrate/v2 v2.1.2 h1:F/d1hpHbRAvKezziV2CC5KUE82cVe9zTgHSBoOOZ4CY=
@@ -28,3 +30,4 @@ gorm.io/driver/sqlite v1.5.5 h1:7MDMtUZhV065SilG62E0MquljeArQZNfJnjd9i9gx3E=
 gorm.io/driver/sqlite v1.5.5/go.mod h1:6NgQ7sQWAIFsPrJJl1lSNSu2TABh0ZZ/zm5fosATavE=
 gorm.io/gorm v1.25.8 h1:WAGEZ/aEcznN4D03laj8DKnehe1e9gYQAjW8xyPRdeo=
 gorm.io/gorm v1.25.8/go.mod h1:hbnx/Oo0ChWMn1BIhpy1oYozzpM15i4YPuHDmfYtwg8=
+gorm.io/gorm v1.25.10/go.mod h1:hbnx/Oo0ChWMn1BIhpy1oYozzpM15i4YPuHDmfYtwg8=

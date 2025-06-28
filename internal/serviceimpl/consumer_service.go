@@ -71,7 +71,7 @@ func NewPostalConsumerService(configs []param.RoutineConfig, dbPath string, temp
 	}
 }
 
-// CreateEvent adds a new event to the database.
+// Run adds a new event to the database.
 func (s *service) Run() error {
 	for _, config := range s.configs {
 		events, err := s.eventService.QueryEvents(*config.QueryBuilder)
@@ -131,6 +131,7 @@ func (s *service) Run() error {
 	return nil
 }
 
+// sendEmailUsingSMTP sends an email using the SMTP configuration.
 func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) error {
 	// Extract recipient addresses
 	toAddresses := getToAddresses(attrs) // Should return []string
@@ -182,6 +183,7 @@ func (s *service) sendEmailUsingSMTP(config *param.RoutineConfig, subject string
 	return nil
 }
 
+// sendEmailUsingPostal sends an email using the Postal API.
 func (s *service) sendEmailUsingPostal(config *param.RoutineConfig, subject string, emailBody *bytes.Buffer, attrs map[string]interface{}) (map[string]interface{}, error) {
 
 	toAddresses := getToAddresses(attrs)
@@ -233,6 +235,7 @@ func getToAddresses(attrs map[string]interface{}) []string {
 	return nil
 }
 
+// emmitEvent creates an event based on the provided postEvent configuration and the event data.
 func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[string]interface{}, s *service) {
 	var attrsJsonStr string
 	if postEvent.CopyFullAttribute {
@@ -262,6 +265,7 @@ func emmitEvent(postEvent param.PostEvent, event param2.EEEvent, attrs map[strin
 	}
 }
 
+// extractFields extracts fields from the data based on the provided spec.
 func extractFields(data interface{}, spec interface{}) interface{} {
 	switch specTyped := spec.(type) {
 	case map[string]bool:
